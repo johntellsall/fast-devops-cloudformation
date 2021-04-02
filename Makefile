@@ -1,7 +1,6 @@
-AWS_ID := john.mitchell.labs
-
 STACK_NAME := johnmitchell-topic-9
 BUCKET := stelligent-u-john.mitchell.labs-apr2
+# TODO fetch from AWS
 INVOKE_URL := https://dfsxy67vtb.execute-api.us-east-2.amazonaws.com/call
 SOURCE_DIR := src
 
@@ -18,15 +17,21 @@ invoke-app:
 	--data '{"key1":"beer"}' \
 	${INVOKE_URL}
 #
-# LAMBDA LAYER :::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# PYTHON LAYER :::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-
 lint-format-python:
 	black ${SOURCE_DIR}
 	flake8 ${SOURCE_DIR}
 
 invoke-local:
 	cd ${SOURCE_DIR} ; python -c 'import hello; print(hello.handler({"key1":"beer"}, None))'
+
+# dev-local -- run code locally when source changes
+dev-local:
+	git ls-files '*.py' | entr -c make lint-format-python invoke-local
+#
+# LAMBDA LAYER :::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#
 
 # invoke -- call Lambda directly
 # TODO pass arg
@@ -35,14 +40,12 @@ invoke-lambda:
 	--function-name my-function \
 	/dev/stdout
 
-# dev-lambda:
-# 	git ls-files '*.py' | entr -c make lint-format-python deploy-lambda
 #
 # RESOURCE LAYER :::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
 lint-format-resource:
 	cfn-format --write template.yaml
-	-cfn-lint template.yaml
+	cfn-lint template.yaml
 
 deploy-resource: lint-format-resource
 	@echo Package and upload code, create new template
@@ -65,7 +68,7 @@ show-outputs:
 deploy: lint-format-resource deploy-resource show-code show-outputs
 
 dev-all:
-	git ls-files '*.yaml' | entr make deploy
+	git ls-files | entr make deploy
 
 delete-resource:
 	aws cloudformation delete-stack --stack-name ${STACK_NAME}
