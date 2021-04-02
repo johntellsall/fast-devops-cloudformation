@@ -1,0 +1,1 @@
+As engineers, we want to 1) minimize the LAG between our changes and seeing the results, and 2) minimize the GAP from what we've produced and what our client wants. This repos shows how to do this with AWS CloudFormation, for a simple Lambda function behind an API Gateway.
